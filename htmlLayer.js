@@ -793,6 +793,7 @@ function ascii(character)
 //====== UPDATE ======
 //
 
+var spaceHeldTime = 0;
 function update(secondsElapsed) 
 {
     keysPressed = nextKeysPressed;
@@ -835,22 +836,13 @@ function update(secondsElapsed)
             }
             acceleration = v2Multiply(angleToV2(player.rotation), accelerationForce);
             
-            if(keysDown[ascii("A")])
-            {
-                player.rotation -= 0.0001 * v2Length(player.motion.velocity);
-            }
-            if(keysDown[ascii("D")])
-            {
-                player.rotation += 0.0001 * v2Length(player.motion.velocity);
-            }
             if(keysDown[ascii(" ")])
             {
                 rocketInfo.phase = "drift";
                 driftSeconds = 0;
-                playerSprite = new staticSprite("data/parachute.png");
-                player.sprite = playerSprite;
+                player.sprite = parachuteSprite;
                 player.motion.drag = parachuteDrag;
-                player.rotation = Math.PI / 2;
+                player.rotation = playerSpawnRotation;
             }
             break;
         case "drift":
@@ -867,19 +859,45 @@ function update(secondsElapsed)
             {
                 // todo: shift drag to a vector
                 rocketInfo.phase = "rover";
-                playerSprite = new staticSprite("data/roverStatic.png");
-                player.sprite = playerSprite;
+                player.sprite = rocketSprite;
                 player.motion.drag = roverDrag;
             }
             break;
     }
     
+    if(rocketInfo.phase == "solidStart" || rocketInfo.phase == "solidMain")
+    {
+        if(keysDown[ascii("A")])
+        {
+            player.rotation -= 0.0001 * v2Length(player.motion.velocity);
+        }
+        if(keysDown[ascii("D")])
+        {
+            player.rotation += 0.0001 * v2Length(player.motion.velocity);
+        }
+    }
+    
     acceleration.y += 200; // do we need to handle mass?
     moveEntity(player, acceleration, secondsElapsed);
     
-    if(isNaN(player.motion.velocity.x))
+    if(keysDown[ascii(" ")])
     {
-        var debugMe = 5;
+        spaceHeldTime += secondsElapsed;
+    }
+    else
+    {
+        spaceHeldTime = 0;
+    }
+    
+    if(spaceHeldTime > 2)
+    {
+        // Respawn
+        player.position = v2Copy(playerSpawn);
+        rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
+        player.rotation = playerSpawnRotation;
+        player.motion.velocity = new v2(0, 0);
+        player.motion.drag = rocketDrag;
+        player.sprite = rocketSprite;
     }
     
     for(i = 0;
@@ -1171,7 +1189,7 @@ function drawEntity(entity)
         canvasContext.save();
         canvasContext.translate(x + (width * camera.scale / 2), y + (height * camera.scale / 2));
         
-        // Note(ian): Physics treats up as 0.
+        // Note(ian): Art is draw facing up instead of right so adjust here.
         canvasContext.rotate(entity.rotation - (Math.PI / 2));
         
         // if(sprite.flipH)
@@ -1293,9 +1311,20 @@ function rocket(solidStartSeconds, solidMainSeconds, capsuleType, roverType)
     this.phase = "ready";
 }
 
+var rocketStartSeconds = 5;
+var rocketMainSeconds = 5;
+var rocketCapsuleType = "parachute";
+var rocketRoverType = "static";
+
+var rocketSprite = new staticSprite("data/rocket.png");
+var staticRoverSprite = new staticSprite("data/roverStatic.png");
+var parachuteSprite = new staticSprite("data/parachute.png");
+
+var playerSpawn;
+var playerSpawnRotation = Math.PI / 2;
 var driftSeconds;
-var rocketInfo = new rocket(5, 5, "parachute", "static");
-var playerSprite = new staticSprite("data/rocket.png");
+var rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
+var playerSprite = rocketSprite;
 var player = new entity(100, 100, playerSprite);
 player.motion = new motion();
 player.physics = new rectanglePhysics(8, 25);
@@ -1434,8 +1463,8 @@ function loadMap(mapJson)
                     var object = layer.objects[j];
                     if(object.name == "playerSpawn")
                     {
-                        player.position.x = object.x;
-                        player.position.y = object.y;
+                        playerSpawn = new v2(object.x, object.y);
+                        player.position = v2Copy(playerSpawn);
                         
                         tempMan.position.x = player.position.x + 100;
                         tempMan.position.y = player.position.y;
@@ -1537,6 +1566,11 @@ function v2NormalizeAssign(a)
     {
         v2DivideAssign(a, v2Length(a));
     }
+}
+
+function v2Copy(v)
+{
+    return new v2(v.x, v.y);
 }
 
 function angleToV2(a)
