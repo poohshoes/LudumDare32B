@@ -763,6 +763,14 @@ function doMouseDown(event)
     //canvas_x = event.pageX;
 }
 
+var nextKeysPressed = {};
+var keysPressed;
+canvas.addEventListener("keypress", doKeyPress, true);
+function doKeyPress(e)
+{
+	nextKeysPressed[e.keyCode] = true;
+}
+
 var keysDown = {};
 canvas.addEventListener("keydown", doKeyDown, true);
 function doKeyDown(e)
@@ -786,7 +794,15 @@ function ascii(character)
 //
 
 function update(secondsElapsed) 
-{    
+{
+    keysPressed = nextKeysPressed;
+    nextKeysPressed = {};
+
+    if(keysPressed[ascii("q")])
+    {
+        debug = !debug;
+    }
+        
     var gravity = 200;
     var acceleration = new v2(0, 0);
     var maxAcceleration = 400;
@@ -1179,11 +1195,15 @@ function drawEntity(entity)
         // }
     }
     
-    if(entity.physics != null)
+    
+    if(debug)
     {
-        drawRectangle(entity.position, entity.physics.size);
+        if(entity.physics != null)
+        {
+            drawRectangle(entity.position, entity.physics.size);
+        }
+        drawCircle(entity.position.x, entity.position.y);
     }
-    drawCircle(entity.position.x, entity.position.y);
 }
 
 //
@@ -1296,6 +1316,7 @@ camera.offset = new v2(0, 0);
 //====== GAME LOOP ======
 //
 
+var debug = false;
 var lastUpdateTime;
 function main()
 {
@@ -1304,22 +1325,24 @@ function main()
 	update(secondsSinceUpdate);
 	draw();
     
-    // TODO(ian): Move into renderer and apply scale?
-    canvasContext.font = "12px Arial";
-    canvasContext.fillStyle = "#41bdb3";
-    var y = 10;
-    canvasContext.fillText(secondsSinceUpdate,10,y);
-    y += 14;
-    canvasContext.fillText("V:" + v2Length(player.motion.velocity), 10, y);
-    y += 14;
-    canvasContext.fillText("X:" + player.motion.velocity.x, 10, y);
-    y += 14;
-    canvasContext.fillText("Y:" + player.motion.velocity.y, 10, y);
-    y += 14;
-    canvasContext.fillText(rocketInfo.phase, 10, y );
-    y += 14;
-    canvasContext.fillText("R: " + player.rotation, 10, y );
-    
+    if(debug)
+    {
+        canvasContext.font = "12px Arial";
+        canvasContext.fillStyle = "#41bdb3";
+        var y = 10;
+        canvasContext.fillText(secondsSinceUpdate,10,y);
+        y += 14;
+        canvasContext.fillText("V:" + v2Length(player.motion.velocity), 10, y);
+        y += 14;
+        canvasContext.fillText("X:" + player.motion.velocity.x, 10, y);
+        y += 14;
+        canvasContext.fillText("Y:" + player.motion.velocity.y, 10, y);
+        y += 14;
+        canvasContext.fillText(rocketInfo.phase, 10, y );
+        y += 14;
+        canvasContext.fillText("R: " + player.rotation, 10, y );
+    }
+        
 	lastUpdateTime = now;
 	requestAnimationFrame(main);
 };
