@@ -859,7 +859,7 @@ function update(secondsElapsed)
             {
                 // todo: shift drag to a vector
                 rocketInfo.phase = "rover";
-                player.sprite = rocketSprite;
+                player.sprite = staticRoverSprite;
                 player.motion.drag = roverDrag;
             }
             break;
@@ -888,7 +888,6 @@ function update(secondsElapsed)
     {
         spaceHeldTime = 0;
     }
-    
     if(spaceHeldTime > 2)
     {
         // Respawn
@@ -1250,10 +1249,12 @@ function animatedSprite(name, frameWidth, frameHeight, framesPerSecond)
 function rectanglePhysics(width, height)
 {
     this.size = new v2(width, height);
+    this.preventsMovement = true;
 }
 
 function entity(x, y, sprite)
 {
+    this.type = "";
     this.position = new v2(x, y);
     this.rotation = Math.PI / 2;
     this.sprite = sprite;
@@ -1311,6 +1312,7 @@ function rocket(solidStartSeconds, solidMainSeconds, capsuleType, roverType)
     this.phase = "ready";
 }
 
+// note(ian): As the player gets more coins they will get upgrades to these rocket variables.
 var rocketStartSeconds = 5;
 var rocketMainSeconds = 5;
 var rocketCapsuleType = "parachute";
@@ -1319,13 +1321,14 @@ var rocketRoverType = "static";
 var rocketSprite = new staticSprite("data/rocket.png");
 var staticRoverSprite = new staticSprite("data/roverStatic.png");
 var parachuteSprite = new staticSprite("data/parachute.png");
+var coinSprite = new staticSprite("data/coin.png");
 
+var coinsCollected = 0;
 var playerSpawn;
 var playerSpawnRotation = Math.PI / 2;
 var driftSeconds;
 var rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
-var playerSprite = rocketSprite;
-var player = new entity(100, 100, playerSprite);
+var player = new entity(0, 0, rocketSprite);
 player.motion = new motion();
 player.physics = new rectanglePhysics(8, 25);
 addEntity(player);
@@ -1454,6 +1457,20 @@ function loadMap(mapJson)
                     var wall = new entity(object.x + (object.width/2), object.y + (object.height/2) , null);
                     wall.physics = new rectanglePhysics(object.width, object.height);
                     addEntity(wall);
+                }
+            }
+            else if(layer.name == "coins")
+            {
+                var coinSize = 10;
+                for(var j = 0; j < layer.objects.length; j++)
+                {
+                    var object = layer.objects[j];
+                    var coin = new entity(object.x, object.y, null);
+                    coin.type = "coin";
+                    coin.physics = new rectanglePhysics(coinSize, coinSize);
+                    coin.physics.preventsMovement = false;
+                    coin.sprite = coinSprite;
+                    addEntity(coin);
                 }
             }
             else
