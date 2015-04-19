@@ -813,6 +813,7 @@ function update(secondsElapsed)
             if(keysDown[ascii("W")])
             {
                 rocketInfo.phase = "solidStart";
+                ignitionSound.play();
             }
             break;
         case "solidStart":
@@ -838,6 +839,7 @@ function update(secondsElapsed)
             
             if(keysDown[ascii(" ")])
             {
+                transitionSound.play();
                 rocketInfo.phase = "drift";
                 driftSeconds = 0;
                 player.sprite = parachuteSprite;
@@ -858,6 +860,7 @@ function update(secondsElapsed)
             if(keysDown[ascii(" ")] && driftSeconds >= 2)
             {
                 // todo: shift drag to a vector
+                transitionSound.play();
                 rocketInfo.phase = "rover";
                 player.sprite = staticRoverSprite;
                 player.motion.drag = roverDrag;
@@ -891,6 +894,7 @@ function update(secondsElapsed)
     if(spaceHeldTime > 2)
     {
         // Respawn
+        respawnSound.play();
         player.position = v2Copy(playerSpawn);
         rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
         player.rotation = playerSpawnRotation;
@@ -899,11 +903,26 @@ function update(secondsElapsed)
         player.sprite = rocketSprite;
     }
     
+    // Entity Updates
     for(i = 0;
         i < entities.length;
         i++)
     {
         var entity = entities[i];
+        // Coins
+        if(entity.type == "coin")
+        {
+            var distanceToPickupCoin = 25;
+            if(v2Length(v2Subtract(player.position, entity.position)) < distanceToPickupCoin)
+            {
+                var index = entities.indexOf(entity);
+                entities.splice(index, 1);
+                coinsCollected++;
+                coinSound.play();
+            }
+        }
+    
+        // Animation
         var sprite = entity.sprite;
         if(sprite != null && sprite.type == "animated")
         {
@@ -957,7 +976,7 @@ function moveEntity(entity, acceleration, secondsElapsed)
             var wallNormal = new v2(0, 0);
             var hitEntity = null;
             var desiredPosition = v2Add(entity.position, positionDelta);
-            
+                        
             // Todo(ian): We might want to do some sort of sim region or broad phase here so that we don't have to check every entity in the game.
             for(var j = 0;
                 j < entities.length;
@@ -1249,7 +1268,7 @@ function animatedSprite(name, frameWidth, frameHeight, framesPerSecond)
 function rectanglePhysics(width, height)
 {
     this.size = new v2(width, height);
-    this.preventsMovement = true;
+    //this.preventsMovement = true;
 }
 
 function entity(x, y, sprite)
@@ -1341,8 +1360,10 @@ camera.scale = 2;
 camera.target = player;
 camera.offset = new v2(0, 0);
 
-// var testSound = new Audio("data/audio/sound1.wav");
-// testSound.play();
+var coinSound = new Audio("data/audio/coin.wav");
+var ignitionSound = new Audio("data/audio/ignition.wav");
+var respawnSound = new Audio("data/audio/respawn.wav");
+var transitionSound = new Audio("data/audio/transition.wav");
 
 //
 //====== GAME LOOP ======
@@ -1467,8 +1488,8 @@ function loadMap(mapJson)
                     var object = layer.objects[j];
                     var coin = new entity(object.x, object.y, null);
                     coin.type = "coin";
-                    coin.physics = new rectanglePhysics(coinSize, coinSize);
-                    coin.physics.preventsMovement = false;
+                    //coin.physics = new rectanglePhysics(coinSize, coinSize);
+                    //coin.physics.preventsMovement = false;
                     coin.sprite = coinSprite;
                     addEntity(coin);
                 }
