@@ -1004,12 +1004,12 @@ function handleCollision(a, b)
 }
 
 function moveEntity(entity, acceleration, secondsElapsed)
-{
-    // todo: handle the case where entity doesn't have a physics?
+{  
+    // var drag = player.motion.drag;
+    // v2AddAssign(acceleration, v2Multiply(entity.motion.velocity, -drag));
     
-    // note: casey has a note here saying we need to implement ODE?    
-    var drag = player.motion.drag;
-    v2AddAssign(acceleration, v2Multiply(entity.motion.velocity, -drag));
+    acceleration.x += entity.motion.velocity.x * -player.motion.drag.x;
+    acceleration.y += entity.motion.velocity.y * -player.motion.drag.y;
     
     var positionDelta = v2Add(
         v2Multiply(acceleration, 0.5 * Math.pow(secondsElapsed, 2)), 
@@ -1372,9 +1372,9 @@ function entity(x, y, sprite)
     this.physics = null;
 }
 
-var rocketDrag = 2;
-var parachuteDrag = 7;
-var roverDrag = 0.5;
+var rocketDrag = new v2(2, 2);
+var parachuteDrag = new v2(7, 7);
+var roverDrag = new v2(2, 0.5);
 function motion()
 {
     this.velocity = new v2();
