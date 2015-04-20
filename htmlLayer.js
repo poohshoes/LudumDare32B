@@ -823,7 +823,7 @@ function update(secondsElapsed)
     
     if(debug && keysPressed[ascii("e")])
     {
-        coinsCollected++;
+        coinsCollected+= 5;
     }
     
     var gravity = 200;
@@ -885,7 +885,7 @@ function update(secondsElapsed)
     }
     
     if(rocketInfo.phase == "drift" || 
-        (rocketInfo.phase == "rover" && rocketInfo.roverType == "car"))
+        (player.physics.onGroundLastFrame  && rocketInfo.phase == "rover" && rocketInfo.roverType == "car"))
     {
         if(keysDown[ascii("A")])
         {
@@ -909,9 +909,21 @@ function update(secondsElapsed)
         }
     }
     
-    acceleration.y += 200; // do we need to handle mass?
+    // Gravity
+    acceleration.y += 200;
+    
+    // This needs to happen before Move Entity is called.
+    for(var i = 0; i < entities.length; i++)
+    {
+        if(entities[i].physics != null)
+        {
+            entities[i].physics.onGroundLastFrame = false;
+        }
+    }
+    
     moveEntity(player, acceleration, secondsElapsed);
     
+    // Respawn
     if(keysDown[ascii(" ")])
     {
         spaceHeldTime += secondsElapsed;
@@ -1067,6 +1079,7 @@ function moveEntity(entity, acceleration, secondsElapsed)
                     {
                         wallNormal = new v2(0, -1);
                         hitEntity = testEntity;
+                        entity.physics.onGroundLastFrame = true;
                     }
             
                     var testResult = TestWall(maxCorner.y, rel.y, rel.x, positionDelta.y, positionDelta.x, tMin, minCorner.x, maxCorner.x);
@@ -1346,6 +1359,7 @@ function rectanglePhysics(width, height)
 {
     this.size = new v2(width, height);
     //this.preventsMovement = true;
+    this.onGroundLastFrame = false;
 }
 
 function entity(x, y, sprite)
@@ -1490,6 +1504,8 @@ function main()
         canvasContext.fillText(rocketInfo.phase, 10, y );
         y += 14;
         canvasContext.fillText("R: " + player.rotation, 10, y );
+        y += 14;
+        canvasContext.fillText("On Ground: " + player.physics.onGroundLastFrame, 10, y );
     }
         
 	lastUpdateTime = now;
