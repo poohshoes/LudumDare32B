@@ -956,6 +956,37 @@ function update(secondsElapsed)
         }
     }
     
+    // Thruster sound controller
+    {
+        var fadeLength = 0.5;
+        setVolumeFadeIn(thrustSound, fadeLength);
+        if(!isNaN(thrustSound.duration))
+        {
+            if(thrustSound.paused)
+            {
+                if(!thrustSound2.paused)
+                {
+                    thrustSound2.pause();
+                }
+            }
+            else
+            {
+                if(thrustSound2.paused)
+                {
+                    thrustSound2.play();
+                }
+            }
+            var newTime = thrustSound.currentTime + (thrustSound.duration/2);
+            if(newTime > thrustSound.duration)
+            {
+                newTime -= thrustSound.duration;
+            }
+            thrustSound2.currentTime = newTime;
+            thrustSound2.volume = 1-thrustSound.volume;
+            //setVolumeFadeIn(thrustSound2, fadeLength);
+        }
+    }
+    
     // Gravity
     acceleration.y += 200;
     
@@ -1053,6 +1084,21 @@ function update(secondsElapsed)
             }
         }
     }
+}
+
+function setVolumeFadeIn(sound, fadeLength)
+{        
+    var volume = 1;
+    if(sound.currentTime < fadeLength)
+    {
+        volume = sound.currentTime * (1 / fadeLength);
+    }
+    var timeToEnd = sound.duration - sound.currentTime;
+    if(timeToEnd < fadeLength)
+    {
+        volume = timeToEnd * (1 / fadeLength);
+    }
+    sound.volume = volume;
 }
 
 function handleCollision(a, b)
@@ -1698,6 +1744,8 @@ var respawnSound = new Audio("data/audio/respawn.wav");
 var transitionSound = new Audio("data/audio/transition.wav");
 var thrustSound = new Audio("data/audio/thrust.wav");
 thrustSound.loop = true;
+var thrustSound2 = new Audio("data/audio/thrust2.wav");
+thrustSound2.loop = true;
 
 //
 //====== GAME LOOP ======
@@ -1715,7 +1763,7 @@ function main()
     if(debug)
     {
         canvasContext.font = "12px Arial";
-        canvasContext.fillStyle = "#41bdb3";
+        canvasContext.fillStyle = "#000000";
         var y = 10;
         canvasContext.fillText(secondsSinceUpdate,10,y);
         y += 14;
@@ -1730,6 +1778,12 @@ function main()
         canvasContext.fillText("R: " + player.rotation, 10, y );
         y += 14;
         canvasContext.fillText("On Ground: " + player.physics.onGroundLastFrame, 10, y );
+        y += 14;
+        canvasContext.fillText("T1: " + thrustSound.currentTime, 10, y );
+        y += 14;
+        canvasContext.fillText("T2: " + thrustSound2.currentTime, 10, y );
+        y += 14;
+        canvasContext.fillText("V1: " + thrustSound.volume, 10, y );
     }
         
 	lastUpdateTime = now;
