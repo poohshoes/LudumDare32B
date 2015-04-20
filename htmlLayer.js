@@ -797,10 +797,16 @@ function ascii(character)
 
 function transitionFromDriftToRover()
 {
-    // todo: shift drag to a vector for glider
     transitionSound.play();
     rocketInfo.phase = "rover";
-    player.sprite = staticRoverSprite;
+    if(rocketInfo.roverType == "car")
+    {
+        player.sprite = carRoverSprite;
+    }
+    else
+    {
+        player.sprite = staticRoverSprite;
+    }
     player.motion.drag = roverDrag;
 }
 
@@ -814,7 +820,12 @@ function update(secondsElapsed)
     {
         debug = !debug;
     }
-        
+    
+    if(debug && keysPressed[ascii("e")])
+    {
+        coinsCollected++;
+    }
+    
     var gravity = 200;
     var acceleration = new v2(0, 0);
     var maxAcceleration = 400;
@@ -823,15 +834,16 @@ function update(secondsElapsed)
         case "ready":
             if(keysDown[ascii("W")])
             {
+                thrustSound.play();
                 rocketInfo.phase = "solidStart";
-                ignitionSound.play();
+                //ignitionSound.play();
             }
             break;
         case "solidStart":
             var accelerationForce = (1 - (rocketInfo.solidStartSeconds / rocketInfo.totalSolidStartSeconds)) * maxAcceleration;
             acceleration = v2Multiply(angleToV2(player.rotation), accelerationForce);
             
-            var time = Math.min(rocketInfo.solidStartSeconds, secondsElapsed);
+            //var time = Math.min(rocketInfo.solidStartSeconds, secondsElapsed);
             rocketInfo.solidStartSeconds -= secondsElapsed;
             if(rocketInfo.solidStartSeconds <= 0)
             {
@@ -846,10 +858,15 @@ function update(secondsElapsed)
             {
                 accelerationForce = maxAcceleration;
             }
+            else
+            {
+                thrustSound.pause();
+            }
             acceleration = v2Multiply(angleToV2(player.rotation), accelerationForce);
             
             if(keysDown[ascii(" ")])
             {
+                thrustSound.pause();
                 transitionSound.play();
                 rocketInfo.phase = "drift";
                 driftSeconds = 0;
@@ -860,19 +877,24 @@ function update(secondsElapsed)
             break;
         case "drift":
             driftSeconds += secondsElapsed;
-            if(keysDown[ascii("A")])
-            {
-                acceleration.x = -200;
-            }
-            if(keysDown[ascii("D")])
-            {
-                acceleration.x = 200;
-            }
             if(keysDown[ascii(" ")] && driftSeconds >= 2)
             {
                 transitionFromDriftToRover();
             }
             break;
+    }
+    
+    if(rocketInfo.phase == "drift" || 
+        (rocketInfo.phase == "rover" && rocketInfo.roverType == "car"))
+    {
+        if(keysDown[ascii("A")])
+        {
+            acceleration.x = -200;
+        }
+        if(keysDown[ascii("D")])
+        {
+            acceleration.x = 200;
+        }
     }
     
     if(rocketInfo.phase == "solidStart" || rocketInfo.phase == "solidMain")
@@ -903,7 +925,7 @@ function update(secondsElapsed)
         // Respawn
         respawnSound.play();
         player.position = v2Copy(playerSpawn);
-        rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
+        rocketInfo = new rocket();
         player.rotation = playerSpawnRotation;
         player.motion.velocity = new v2(0, 0);
         player.motion.drag = rocketDrag;
@@ -925,7 +947,20 @@ function update(secondsElapsed)
                 var index = entities.indexOf(entity);
                 entities.splice(index, 1);
                 coinsCollected++;
-                coinSound.play();
+                if(coinsCollected == coinsForCar ||
+                    coinsCollected == coinsForBooster2 ||
+                    coinsCollected == coinsForJump ||
+                    coinsCollected == coinsForGlider ||
+                    coinsCollected == coinsForBooster3 ||
+                    coinsCollected == coinsForJetpack ||
+                    coinsCollected == coinsForBooster4)
+                {
+                    levelupSound.play();
+                }
+                else
+                {
+                    coinSound.play();
+                }
             }
         }
     
@@ -1324,8 +1359,8 @@ function entity(x, y, sprite)
 }
 
 var rocketDrag = 2;
-var parachuteDrag = 10;
-var roverDrag = 2;
+var parachuteDrag = 7;
+var roverDrag = 0.5;
 function motion()
 {
     this.velocity = new v2();
@@ -1340,47 +1375,63 @@ function addEntity(entity)
     entities[entities.length] = entity;
 }
 
-// var playerRed = new animatedSprite("data/s_player_red.png", 16, 32, 8);
-// var playerBlue = new animatedSprite("data/s_player_blue.png", 16, 32, 8);
-// playerBlue.flipH = true;
-// var guy = new entity(100, 100, playerRed);
-// guy.motion = new motion();
-// guy.physics = new rectanglePhysics(8, 8);
-// addEntity(guy);
-
-// var savePoint = new entity(200, 100, new animatedSprite("data/s_save_point_standing.png", 16, 32, 8));
-// addEntity(savePoint);
-
 // rover
 // +5 booster
 // jumping rover
 // glider
 // +5 booster
-// submersible rover
-// +5 booster
 // jetback rover
+// +5 booster
+// submersible rover
 
  var tempMan = new entity(300, 100, new staticSprite("data/s_man_0.png"));
  addEntity(tempMan);
 
-function rocket(solidStartSeconds, solidMainSeconds, capsuleType, roverType)
+var coinsForCar = 5;
+var coinsForBooster2 = 10;
+var coinsForJump = 15;
+var coinsForGlider = 20;
+var coinsForBooster3 = 25;
+var coinsForJetpack = 30;
+var coinsForBooster4 = 35;
+
+function rocket() 
 {
-    this.totalSolidStartSeconds = solidStartSeconds;
-    this.solidStartSeconds = solidStartSeconds;
-    this.solidMainSeconds = solidMainSeconds;
-    this.capsuleType = capsuleType;
-    this.roverType = roverType;
+    this.solidStartSeconds = 5;
+    this.totalSolidStartSeconds = this.solidStartSeconds;
+    
+    if(coinsCollected < coinsForBooster2)
+    {
+        this.solidMainSeconds = 5;
+    }
+    else if(coinsCollected < coinsForBooster3)
+    {
+        this.solidMainSeconds = 10;
+    }
+    else if(coinsCollected < coinsForBooster4)
+    {
+        this.solidMainSeconds = 15;
+    }
+    else
+    {
+        this.solidMainSeconds = 20;
+    }
+    
+    this.capsuleType = "parachute";
+    if(coinsCollected < coinsForCar)
+    {
+        this.roverType = "static";
+    }
+    else
+    {
+        this.roverType = "car";
+    }
     this.phase = "ready";
 }
 
-// note(ian): As the player gets more coins they will get upgrades to these rocket variables.
-var rocketStartSeconds = 5;
-var rocketMainSeconds = 5;
-var rocketCapsuleType = "parachute";
-var rocketRoverType = "static";
-
 var rocketSprite = new staticSprite("data/rocket.png");
 var staticRoverSprite = new staticSprite("data/roverStatic.png");
+var carRoverSprite = new staticSprite("data/roverCar.png");
 var parachuteSprite = new staticSprite("data/parachute.png");
 var coinSprite = new staticSprite("data/coin.png");
 
@@ -1388,10 +1439,10 @@ var coinsCollected = 0;
 var playerSpawn;
 var playerSpawnRotation = Math.PI / 2;
 var driftSeconds;
-var rocketInfo = new rocket(rocketStartSeconds, rocketMainSeconds, rocketCapsuleType, rocketRoverType);
+var rocketInfo = new rocket();
 var player = new entity(0, 0, rocketSprite);
 player.motion = new motion();
-player.physics = new rectanglePhysics(8, 25);
+player.physics = new rectanglePhysics(20, 25);
 addEntity(player);
 
 var mapData = new Object();
@@ -1403,9 +1454,12 @@ camera.target = player;
 camera.offset = new v2(0, 0);
 
 var coinSound = new Audio("data/audio/coin.wav");
+var levelupSound = new Audio("data/audio/levelup.wav");
 var ignitionSound = new Audio("data/audio/ignition.wav");
 var respawnSound = new Audio("data/audio/respawn.wav");
 var transitionSound = new Audio("data/audio/transition.wav");
+var thrustSound = new Audio("data/audio/thrust.wav");
+thrustSound.loop = true;
 
 //
 //====== GAME LOOP ======
