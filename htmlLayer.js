@@ -793,6 +793,15 @@ function ascii(character)
 //====== UPDATE ======
 //
 
+function transitionFromDriftToRover()
+{
+    // todo: shift drag to a vector for glider
+    transitionSound.play();
+    rocketInfo.phase = "rover";
+    player.sprite = staticRoverSprite;
+    player.motion.drag = roverDrag;
+}
+
 var spaceHeldTime = 0;
 function update(secondsElapsed) 
 {
@@ -859,11 +868,7 @@ function update(secondsElapsed)
             }
             if(keysDown[ascii(" ")] && driftSeconds >= 2)
             {
-                // todo: shift drag to a vector
-                transitionSound.play();
-                rocketInfo.phase = "rover";
-                player.sprite = staticRoverSprite;
-                player.motion.drag = roverDrag;
+                transitionFromDriftToRover();
             }
             break;
     }
@@ -933,6 +938,18 @@ function update(secondsElapsed)
             {
                 sprite.animationSeconds -= totalAnimationSeconds;
             }
+        }
+    }
+}
+
+function handleCollision(a, b)
+{
+    // Auto transition from drift to rover
+    if(a == player || b == player)
+    {
+        if(rocketInfo.phase == "drift")
+        {
+            transitionFromDriftToRover();
         }
     }
 }
@@ -1030,7 +1047,9 @@ function moveEntity(entity, acceleration, secondsElapsed)
             if(hitEntity != null)
             {
                 positionDelta = v2Subtract(desiredPosition, entity.position);
-                //handleCollision(entity, hitEntity);
+                
+                handleCollision(entity, hitEntity);
+                
                 // Note(ian): Ignore this code for objects that handle collisions but don't prevent movement.  Also might want to record the contant and ignore it until contact breaks.
                 positionDelta = v2Subtract(positionDelta,
                     v2Multiply(wallNormal, v2Inner(positionDelta, wallNormal)));
