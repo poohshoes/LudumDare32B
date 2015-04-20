@@ -743,8 +743,10 @@ mousedown, mousemove, mouseleave, mouseenter, mouseup, mouseout, mouseover*/
 var startScale = 2;
 var canvas = document.createElement("canvas");
 var canvasContext = canvas.getContext("2d");
-canvas.width = 480 * startScale;
-canvas.height = 400 * startScale;
+var baseWidth = 480;
+var baseHeight = 400;
+canvas.width = baseWidth * startScale;
+canvas.height = baseHeight * startScale;
 canvas.style.display = "block";
 canvas.style.margin = "0px auto";
 //http://www.dbp-consulting.com/tutorials/canvas/CanvasKeyEvents.html
@@ -1167,6 +1169,12 @@ function draw()
     {
         drawEntity(entities[i]);
     }
+    
+    if(coinsCollected > 0)
+    {
+        var fontHeight = 16;
+        drawText(new v2(10, baseHeight - fontHeight - 10), coinsCollected, fontHeight, "#52b252");
+    }
 }
 
 function drawRectangle(center, size)
@@ -1259,6 +1267,21 @@ function drawEntity(entity)
         }
         drawCircle(entity.position.x, entity.position.y);
     }
+}
+
+function drawText(start, text, fontHeight, color)
+{
+    color = color || colorText;
+    canvasContext.font = fontHeight + "px Arial";
+    canvasContext.fillStyle = color;
+    
+    var position = new v2(start.x, start.y);
+    position.y += fontHeight;
+    
+    canvasContext.save();
+    canvasContext.scale(camera.scale, camera.scale);
+    canvasContext.fillText(text, position.x, position.y);
+    canvasContext.restore();
 }
 
 //
