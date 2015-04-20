@@ -823,7 +823,7 @@ function update(secondsElapsed)
 {
     keysPressed = nextKeysPressed;
     nextKeysPressed = {};
-
+    
     if(keysPressed[ascii("q")])
     {
         debug = !debug;
@@ -840,7 +840,7 @@ function update(secondsElapsed)
     switch(rocketInfo.phase)
     {
         case "ready":
-            if(keysDown[ascii("W")])
+            if(keysDown[ascii("W")] || keysDown[38])
             {
                 thrustSound.play();
                 rocketInfo.phase = "solidStart";
@@ -872,7 +872,7 @@ function update(secondsElapsed)
             }
             acceleration = v2Multiply(angleToV2(player.rotation), accelerationForce);
             
-            if(keysDown[ascii(" ")])
+            if(keysDown[ascii("S")] || keysDown[40])
             {
                 thrustSound.pause();
                 transitionSound.play();
@@ -885,15 +885,15 @@ function update(secondsElapsed)
             break;
         case "drift":
             driftSeconds += secondsElapsed;
-            if(keysDown[ascii(" ")] && driftSeconds >= 2)
+            if((keysDown[ascii("S")] || keysDown[40]) && driftSeconds >= 2)
             {
                 transitionFromDriftToRover();
             }
-            if(keysDown[ascii("A")])
+            if(keysDown[ascii("A")] || keysDown[37])
             {
                 acceleration.x = -200;
             }
-            if(keysDown[ascii("D")])
+            if(keysDown[ascii("D")] || keysDown[39])
             {
                 acceleration.x = 200;
             }
@@ -905,7 +905,7 @@ function update(secondsElapsed)
             }
         
             var shouldPlayThrustSound = false;
-            if(keysDown[ascii("W")])
+            if(keysDown[ascii("W")] || keysDown[38])
             {
                 if(player.physics.onGroundLastFrame && (rocketInfo.roverType == "jump"))// || rocketInfo.roverType == "hover"))
                 {
@@ -932,11 +932,11 @@ function update(secondsElapsed)
                 {
                     accelerationMagnitue = 200;
                 }
-                if(keysDown[ascii("A")])
+                if(keysDown[ascii("A")] || keysDown[37])
                 {
                     acceleration.x = -accelerationMagnitue;
                 }
-                if(keysDown[ascii("D")])
+                if(keysDown[ascii("D")] || keysDown[39])
                 {
                     acceleration.x = accelerationMagnitue;
                 }
@@ -946,11 +946,11 @@ function update(secondsElapsed)
     
     if(rocketInfo.phase == "solidStart" || rocketInfo.phase == "solidMain")
     {
-        if(keysDown[ascii("A")])
+        if(keysDown[ascii("A")] || keysDown[37])
         {
             player.rotation -= 0.0001 * v2Length(player.motion.velocity);
         }
-        if(keysDown[ascii("D")])
+        if(keysDown[ascii("D")] || keysDown[39])
         {
             player.rotation += 0.0001 * v2Length(player.motion.velocity);
         }
@@ -971,7 +971,7 @@ function update(secondsElapsed)
     moveEntity(player, acceleration, secondsElapsed);
     
     // Respawn
-    if(keysDown[ascii(" ")])
+    if(keysDown[ascii("S")] || keysDown[40])
     {
         spaceHeldTime += secondsElapsed;
     }
@@ -1267,6 +1267,31 @@ function draw()
         var fontHeight = 16;
         drawText(new v2(10, baseHeight - fontHeight - 10), coinsCollected, fontHeight, "#52b252");
     }
+    
+    var activePhrase = "";
+    switch(rocketInfo.phase)
+    {
+        case "ready":
+            activePhrase = "press UP to ignite solid rocket boosters";
+            break;
+        case "solidMain":
+            activePhrase = "press DOWN to open the parachute";
+            break;
+        case "drift":
+            activePhrase = "press DOWN to detach the parachute";
+            break;
+        case "rover":
+            activePhrase = "hold DOWN for next launch";
+            break;
+    }
+    if(activePhrase != "")
+    {
+        var fontHeight = 10;
+        canvasContext.font = fontHeight + "px " + font; // note(ian): Must set this for measureText to work.
+        var x = (baseWidth - canvasContext.measureText(activePhrase).width) / 2;
+        var y = baseHeight - 10 - fontHeight;
+        drawText(new v2(x, y), activePhrase, fontHeight, "#FF5B4C")
+    }    
 }
 
 function drawRectangle(center, size)
@@ -1361,10 +1386,11 @@ function drawEntity(entity)
     }
 }
 
+var font = "Arial";
 function drawText(start, text, fontHeight, color)
 {
     color = color || colorText;
-    canvasContext.font = fontHeight + "px Arial";
+    canvasContext.font = fontHeight + "px " + font;
     canvasContext.fillStyle = color;
     
     var position = new v2(start.x, start.y);
@@ -1417,7 +1443,7 @@ function entity(x, y, sprite)
 }
 
 var rocketDrag = new v2(2, 2);
-var parachuteDrag = new v2(7, 7);
+var parachuteDrag = new v2(5, 7);
 var roverDrag = new v2(2, 0.5);
 function motion()
 {
