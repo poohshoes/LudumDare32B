@@ -799,7 +799,15 @@ function transitionFromDriftToRover()
 {
     transitionSound.play();
     rocketInfo.phase = "rover";
-    if(rocketInfo.roverType == "car")
+    if(rocketInfo.roverType == "hover")
+    {
+        player.sprite = hoverRoverSprite;
+    }
+    else if(rocketInfo.roverType == "jump")
+    {
+        player.sprite = jumpRoverSprite;
+    }
+    else if(rocketInfo.roverType == "car")
     {
         player.sprite = carRoverSprite;
     }
@@ -881,20 +889,59 @@ function update(secondsElapsed)
             {
                 transitionFromDriftToRover();
             }
+            if(keysDown[ascii("A")])
+            {
+                acceleration.x = -200;
+            }
+            if(keysDown[ascii("D")])
+            {
+                acceleration.x = 200;
+            }
             break;
-    }
-    
-    if(rocketInfo.phase == "drift" || 
-        (player.physics.onGroundLastFrame  && rocketInfo.phase == "rover" && rocketInfo.roverType == "car"))
-    {
-        if(keysDown[ascii("A")])
-        {
-            acceleration.x = -200;
-        }
-        if(keysDown[ascii("D")])
-        {
-            acceleration.x = 200;
-        }
+        case "rover":
+            if(player.physics.onGroundLastFrame)
+            {
+                rocketInfo.hoverSeconds = rocketInfo.hoverSecondsMax;
+            }
+        
+            var shouldPlayThrustSound = false;
+            if(keysDown[ascii("W")])
+            {
+                if(player.physics.onGroundLastFrame && (rocketInfo.roverType == "jump"))// || rocketInfo.roverType == "hover"))
+                {
+                    acceleration.y -= 8000;
+                }
+                else if(rocketInfo.roverType == "hover" && rocketInfo.hoverSeconds > 0)
+                {
+                    shouldPlayThrustSound = true;
+                    thrustSound.play();
+                    rocketInfo.hoverSeconds -= secondsElapsed;
+                    acceleration.y -= 400;
+                }
+            }
+                
+            if(!shouldPlayThrustSound)
+            {
+                thrustSound.pause();
+            }
+            
+            if(rocketInfo.roverType != "static")
+            {
+                var accelerationMagnitue = 200;//50; // off the ground
+                if(player.physics.onGroundLastFrame)
+                {
+                    accelerationMagnitue = 200;
+                }
+                if(keysDown[ascii("A")])
+                {
+                    acceleration.x = -accelerationMagnitue;
+                }
+                if(keysDown[ascii("D")])
+                {
+                    acceleration.x = accelerationMagnitue;
+                }
+            }
+            break;
     }
     
     if(rocketInfo.phase == "solidStart" || rocketInfo.phase == "solidMain")
@@ -1004,10 +1051,7 @@ function handleCollision(a, b)
 }
 
 function moveEntity(entity, acceleration, secondsElapsed)
-{  
-    // var drag = player.motion.drag;
-    // v2AddAssign(acceleration, v2Multiply(entity.motion.velocity, -drag));
-    
+{
     acceleration.x += entity.motion.velocity.x * -player.motion.drag.x;
     acceleration.y += entity.motion.velocity.y * -player.motion.drag.y;
     
@@ -1169,7 +1213,7 @@ function approach(start, destination, rate)
 function draw()
 {
     // Fill to black.
-    canvasContext.fillStyle = "#000000";
+    canvasContext.fillStyle = "#05b9db";
     canvasContext.fillRect(0,0,canvas.width,canvas.height);
 
     var cameraOffset = v2Multiply(camera.target.position, camera.scale);
@@ -1389,6 +1433,9 @@ function addEntity(entity)
     entities[entities.length] = entity;
 }
 
+ // var tempMan = new entity(300, 100, new staticSprite("data/test.png"));
+ // addEntity(tempMan);
+ 
 // rover
 // +5 booster
 // jumping rover
@@ -1397,9 +1444,6 @@ function addEntity(entity)
 // jetback rover
 // +5 booster
 // submersible rover
-
- var tempMan = new entity(300, 100, new staticSprite("data/s_man_0.png"));
- addEntity(tempMan);
 
 var coinsForCar = 5;
 var coinsForBooster2 = 10;
@@ -1411,41 +1455,57 @@ var coinsForBooster4 = 35;
 
 function rocket() 
 {
+    // note(ian): You can only hover when you have the hover rover.
+    this.hoverSecondsMax = 1;
+    this.hoverSeconds = this.hoverSecondsMax;
+    
     this.solidStartSeconds = 5;
     this.totalSolidStartSeconds = this.solidStartSeconds;
     
     if(coinsCollected < coinsForBooster2)
     {
-        this.solidMainSeconds = 5;
+        this.solidMainSeconds = 4;
     }
     else if(coinsCollected < coinsForBooster3)
     {
-        this.solidMainSeconds = 10;
+        this.solidMainSeconds = 8;
     }
     else if(coinsCollected < coinsForBooster4)
     {
-        this.solidMainSeconds = 15;
+        this.solidMainSeconds = 12;
     }
     else
     {
-        this.solidMainSeconds = 20;
+        this.solidMainSeconds = 16;
     }
     
     this.capsuleType = "parachute";
+    
     if(coinsCollected < coinsForCar)
     {
         this.roverType = "static";
     }
-    else
+    else if(coinsCollected < coinsForJump)
     {
         this.roverType = "car";
     }
+    else if(coinsCollected < coinsForJetpack)
+    {
+        this.roverType = "jump";
+    }
+    else
+    {
+        this.roverType = "hover";
+    }
+    
     this.phase = "ready";
 }
 
 var rocketSprite = new staticSprite("data/rocket.png");
 var staticRoverSprite = new staticSprite("data/roverStatic.png");
 var carRoverSprite = new staticSprite("data/roverCar.png");
+var jumpRoverSprite = new staticSprite("data/roverJump.png");
+var hoverRoverSprite = new staticSprite("data/roverHover.png");
 var parachuteSprite = new staticSprite("data/parachute.png");
 var coinSprite = new staticSprite("data/coin.png");
 
@@ -1616,8 +1676,8 @@ function loadMap(mapJson)
                         playerSpawn = new v2(object.x, object.y);
                         player.position = v2Copy(playerSpawn);
                         
-                        tempMan.position.x = player.position.x + 100;
-                        tempMan.position.y = player.position.y;
+                        // tempMan.position.x = player.position.x + 100;
+                        // tempMan.position.y = player.position.y;
                     }
                 }
             }
