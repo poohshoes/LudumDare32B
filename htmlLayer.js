@@ -1284,7 +1284,7 @@ function update(secondsElapsed)
     
     var gravity = 200;
     var acceleration = new v2(0, 0);
-    var maxAcceleration = 400;
+    var maxAcceleration = 500;
     switch(rocketInfo.phase)
     {
         case "ready":
@@ -1716,12 +1716,9 @@ function draw()
     var backingHeight = 20;
     drawRectangle2(new v2(0, baseHeight - backingHeight), new v2(baseWidth, backingHeight), "#404040", false);
     
-    // if(coinsCollected > 0)
-    // {
-        var fontHeight = 16;
-        var coinsText = coinsCollected + " / " + totalCoins;
-        drawText(new v2(10, baseHeight - fontHeight - 4), coinsText, fontHeight, "#ffffff");
-    // }
+    var fontHeight = 16;
+    var coinsText = coinsCollected + " / " + totalCoins;
+    drawText(new v2(10, baseHeight - fontHeight - 4), coinsText, fontHeight, "#ffffff");
     
     var activePhrase = "";
     switch(rocketInfo.phase)
