@@ -989,7 +989,23 @@ function update(secondsElapsed)
         player.rotation = playerSpawnRotation;
         player.motion.velocity = new v2(0, 0);
         player.motion.drag = rocketDrag;
-        player.sprite = rocketSprite;
+        
+        if(coinsCollected < coinsForBooster2)
+        {
+            player.sprite = rocketSprite;
+        }
+        else if(coinsCollected < coinsForBooster3)
+        {
+            player.sprite = rocketSprite2;
+        }
+        else if(coinsCollected < coinsForBooster4)
+        {
+            player.sprite = rocketSprite3;
+        }
+        else
+        {
+            player.sprite = rocketSprite4;
+        }
     }
     
     // Entity Updates
@@ -1295,7 +1311,90 @@ function draw()
         var x = (baseWidth - canvasContext.measureText(activePhrase).width) / 2;
         var y = baseHeight - 6 - fontHeight;
         drawText(new v2(x, y), activePhrase, fontHeight, "#FFFFFF")
-    }    
+    }
+    
+    var medalPhrase = "";
+    var medalSpacing = (medalbuggyGoldSprite.image.height / camera.scale) + 2;
+    var medalY = baseHeight - medalSpacing;
+    var medalX = baseWidth - medalSpacing;
+    
+    if(totalCoins == coinsCollected)
+    {
+        drawTexture(medalCompleteSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        medalPhrase = "Mission Complete!";
+    }
+    if(coinsCollected >= coinsForBooster4)
+    {
+        drawTexture(medalRocketGoldSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Full Booster";
+        }
+    }
+    if(coinsCollected >= coinsForJetpack)
+    {
+        drawTexture(medalbuggyGoldSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Hover Rover";
+        }
+    }
+    if(coinsCollected >= coinsForBooster3)
+    {
+        drawTexture(medalRocketSilverSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Stronger Booster";
+        }
+    }
+    // if(coinsCollected >= coinsForGlider)
+    // {
+        // drawTexture(medalCompleteSprite.image, medalX, medalY);
+        // medalY -= medalSpacing;
+        // if(medalPhrase == "")
+        // {
+            // medalPhrase = "Mission Complete!";
+        // }
+    // }
+    if(coinsCollected >= coinsForJump)
+    {
+        drawTexture(medalbuggySilverSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Jumping Rover";
+        }
+    }
+    if(coinsCollected >= coinsForBooster2)
+    {
+        drawTexture(medalRocketBronzeSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Booster Plus";
+        }
+    }
+    if(coinsCollected >= coinsForCar)
+    {
+        drawTexture(medalbuggyBronzeSprite.image, medalX, medalY);
+        medalY -= medalSpacing;
+        if(medalPhrase == "")
+        {
+            medalPhrase = "Manuverable Rover";
+        }
+    }
+    if(medalPhrase != "")
+    {
+        var fontHeight = 9;
+        canvasContext.font = fontHeight + "px " + font; // note(ian): Must set this for measureText to work.
+        var position = new v2(medalX, baseHeight - fontHeight - 6);
+        position.x -= canvasContext.measureText(medalPhrase).width;
+        drawText(position, medalPhrase, fontHeight, "#FFFFFF");
+    }
 }
 
 // draws from center point
@@ -1334,6 +1433,14 @@ function drawCircle(x, y)
     canvasContext.arc(x, y, radius, 0, 2 * Math.PI, false);
     canvasContext.fillStyle = 'green';
     canvasContext.fill();
+}
+
+// note(ian): This is only for unscaled images!
+function drawTexture(image, x, y)
+{
+    x = (x * camera.scale);// - camera.offset.x;
+    y = (y * camera.scale);// - camera.offset.y;
+    canvasContext.drawImage(image, x, y);//, image.width * camera.scale, image.height * camera.scale);
 }
 
 function drawEntity(entity)
@@ -1548,12 +1655,22 @@ function rocket()
 }
 
 var rocketSprite = new staticSprite("data/rocket.png");
+var rocketSprite2 = new staticSprite("data/rocket2.png");
+var rocketSprite3 = new staticSprite("data/rocket3.png");
+var rocketSprite4 = new staticSprite("data/rocket4.png");
 var staticRoverSprite = new staticSprite("data/roverStatic.png");
 var carRoverSprite = new staticSprite("data/roverCar.png");
 var jumpRoverSprite = new staticSprite("data/roverJump.png");
 var hoverRoverSprite = new staticSprite("data/roverHover.png");
 var parachuteSprite = new staticSprite("data/parachute.png");
 var coinSprite = new staticSprite("data/coin.png");
+var medalbuggyGoldSprite = new staticSprite("data/medalbuggy1.png");
+var medalbuggySilverSprite = new staticSprite("data/medalbuggy2.png");
+var medalbuggyBronzeSprite = new staticSprite("data/medalbuggy3.png");
+var medalRocketGoldSprite = new staticSprite("data/medal3.png");
+var medalRocketSilverSprite = new staticSprite("data/medal4.png");
+var medalRocketBronzeSprite = new staticSprite("data/medal5.png");
+var medalCompleteSprite = new staticSprite("data/medal.png");
 
 var totalCoins = 0;
 var coinsCollected = 0;
