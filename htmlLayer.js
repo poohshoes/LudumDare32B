@@ -1845,9 +1845,9 @@ var levelupSound = new Audio("data/audio/levelup.wav");
 var ignitionSound = new Audio("data/audio/ignition.wav");
 var respawnSound = new Audio("data/audio/respawn.wav");
 var transitionSound = new Audio("data/audio/transition.wav");
-var thrustSound = new Audio("data/audio/thrust.wav");
+var thrustSound = new Audio("data/audio/thruster1.wav");
 thrustSound.loop = true;
-var thrustSound2 = new Audio("data/audio/thrust2.wav");
+var thrustSound2 = new Audio("data/audio/thruster2.wav");
 thrustSound2.loop = true;
 
 var rocketSong = new Audio("data/audio/rockets_flight.wav");
