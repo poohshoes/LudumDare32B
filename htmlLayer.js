@@ -1081,7 +1081,7 @@ function update(secondsElapsed)
                 if(coinsCollected == coinsForCar ||
                     coinsCollected == coinsForBooster2 ||
                     coinsCollected == coinsForJump ||
-                    coinsCollected == coinsForGlider ||
+ //                   coinsCollected == coinsForGlider ||
                     coinsCollected == coinsForBooster3 ||
                     coinsCollected == coinsForJetpack ||
                     coinsCollected == coinsForBooster4)
