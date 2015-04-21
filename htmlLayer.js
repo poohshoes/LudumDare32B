@@ -1147,6 +1147,9 @@ function update(secondsElapsed)
             particles.splice(i, 1);
         }
     }
+    
+    setVolumeFadeIn(rocketSong, 1);
+    setVolumeFadeIn(gameSong, 1);
 }
 
 function setVolumeFadeIn(sound, fadeLength)
@@ -1847,10 +1850,10 @@ thrustSound.loop = true;
 var thrustSound2 = new Audio("data/audio/thrust2.wav");
 thrustSound2.loop = true;
 
-var rocketSong = new Audio("data/audio/levelup.wav");
+var rocketSong = new Audio("data/audio/rockets_flight.wav");
 rocketSong.loop = true;
 
-var gameSong = new Audio("data/audio/coin.wav");
+var gameSong = new Audio("data/audio/rockets_land.wav");
 gameSong.loop = true;
 
 //
