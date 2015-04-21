@@ -1507,10 +1507,10 @@ function update(secondsElapsed)
     keysPressed = nextKeysPressed;
     nextKeysPressed = {};
     
-    // if(keysPressed[ascii("q")])
-    // {
-        // debug = !debug;
-    // }
+    if(keysPressed[ascii("q")])
+    {
+        debug = !debug;
+    }
     
     if(debug && keysPressed[ascii("e")])
     {
@@ -2097,75 +2097,19 @@ function draw()
     var medalY = baseHeight - medalSpacing;
     var medalX = baseWidth - medalSpacing;
     
-    if(totalCoins == coinsCollected)
+    for(var i = 0; i < medals.length; i++)
     {
-        drawTexture(medalCompleteSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        medalPhrase = "Mission Complete!";
-    }
-    if(coinsCollected >= coinsForJetpack)
-    {
-        drawTexture(medalbuggyGoldSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
+        if(coinsCollected >= medals[i].cost)
         {
-            medalPhrase = "Hover Rover";
+            drawTexture(medals[i].sprite.image, medalX, medalY);
+            medalY -= medalSpacing;
+            if(medalPhrase == "")
+            {
+                medalPhrase = medals[i].phrase;
+            }
         }
     }
-    if(coinsCollected >= coinsForBooster4)
-    {
-        drawTexture(medalRocketGoldSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
-        {
-            medalPhrase = "Full Booster";
-        }
-    }
-    if(coinsCollected >= coinsForJump)
-    {
-        drawTexture(medalbuggySilverSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
-        {
-            medalPhrase = "Jumping Rover";
-        }
-    }
-    if(coinsCollected >= coinsForBooster3)
-    {
-        drawTexture(medalRocketSilverSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
-        {
-            medalPhrase = "Stronger Booster";
-        }
-    }
-    // if(coinsCollected >= coinsForGlider)
-    // {
-        // drawTexture(medalCompleteSprite.image, medalX, medalY);
-        // medalY -= medalSpacing;
-        // if(medalPhrase == "")
-        // {
-            // medalPhrase = "Mission Complete!";
-        // }
-    // }
-    if(coinsCollected >= coinsForCar)
-    {
-        drawTexture(medalbuggyBronzeSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
-        {
-            medalPhrase = "Manuverable Rover";
-        }
-    }
-    if(coinsCollected >= coinsForBooster2)
-    {
-        drawTexture(medalRocketBronzeSprite.image, medalX, medalY);
-        medalY -= medalSpacing;
-        if(medalPhrase == "")
-        {
-            medalPhrase = "Booster Plus";
-        }
-    }
+    
     if(medalPhrase != "")
     {
         var fontHeight = 9;
@@ -2174,28 +2118,27 @@ function draw()
         position.x -= canvasContext.measureText(medalPhrase).width;
         drawText(position, medalPhrase, fontHeight, "#FFFFFF");
     }
-    
-    
+        
     for(i = particles.length -1;
         i >= 0;
         i--)
     {
         var particle = particles[i];
         var lifePercent = particle.live / particle.lifeMax;
-        var image = smokeSprite.image;
+        var sprite = smokeSprite;
         if(lifePercent > 0.25)
         {
-            image = smokeSprite2.image;
+            sprite = smokeSprite2;
         }
         if(lifePercent > 0.50)
         {
-            image = smokeSprite3.image;
+            sprite = smokeSprite3;
         }
         if(lifePercent > 0.75)
         {
-            image = smokeSprite4.image;
+            sprite = smokeSprite4;
         }
-        drawTextureScaled(image, particle.position.x, particle.position.y);
+        drawSprite(sprite, particle.position, 0);
     }
 }
 
@@ -2245,73 +2188,12 @@ function drawTexture(image, x, y)
     canvasContext.drawImage(image, x, y);//, image.width * camera.scale, image.height * camera.scale);
 }
 
-function drawTextureScaled(image, x, y)
-{
-    x = (x * camera.scale) - camera.offset.x;
-    y = (y * camera.scale) - camera.offset.y;
-    var tile = mapData.tiles[spriteID];
-    canvasContext.drawImage(tile.image, x, y, mapData.tileWidth * camera.scale, mapData.tileHeight * camera.scale);
-}
-
 function drawEntity(entity)
 {
     if(entity.sprite != null)
     {
-        var sprite = entity.sprite;    
-        var sourceX = 0;
-        var sourceY = 0;
-        var width = sprite.image.width;
-        var height = sprite.image.height;
-        
-        if(sprite.type == "animated")
-        {
-            var frame = Math.floor(sprite.animationSeconds * sprite.framesPerSecond);
-            sourceX = sprite.frameWidth * frame;
-            width = sprite.frameWidth;
-            height = sprite.frameHeight;
-        }
-        
-        var x = entity.position.x * camera.scale;
-        var y = entity.position.y * camera.scale;
-        
-        x -= camera.offset.x;
-        y -= camera.offset.y;
-        
-        // Note(ian): Make the origin the bottom center of the sprite.
-        x -= width * camera.scale / 2;
-        y -= height * camera.scale / 2;
-        
-        // TODO(ian): When rounding we should also consider the scale so we can have finer movement.
-        x = Math.round(x);
-        y = Math.round(y);
-        
-        canvasContext.save();
-        canvasContext.translate(x + (width * camera.scale / 2), y + (height * camera.scale / 2));
-        
-        // Note(ian): Art is draw facing up instead of right so adjust here.
-        canvasContext.rotate(entity.rotation - (Math.PI / 2));
-        
-        // if(sprite.flipH)
-        // {
-            // canvasContext.save();
-            // canvasContext.translate(canvas.width, 0);
-            // canvasContext.scale(-1, 1);
-            // x = canvas.width - x - (sprite.frameWidth * camera.scale);
-        // }
-        
-        canvasContext.drawImage(sprite.image, sourceX, sourceY, width, height,
-            -width * camera.scale / 2, 
-            -height * camera.scale / 2, 
-            width * camera.scale, height * camera.scale);
-        
-        canvasContext.restore();
-        
-        // if(sprite.flipH)
-        // {
-            // canvasContext.restore();
-        // }
+        drawSprite(entity.sprite, entity.position, entity.rotation);
     }
-    
     
     if(debug)
     {
@@ -2321,6 +2203,62 @@ function drawEntity(entity)
         }
         drawCircle(entity.position.x, entity.position.y);
     }
+}
+
+function drawSprite(sprite, position, rotation)
+{   
+    var sourceX = 0;
+    var sourceY = 0;
+    var width = sprite.image.width;
+    var height = sprite.image.height;
+    
+    if(sprite.type == "animated")
+    {
+        var frame = Math.floor(sprite.animationSeconds * sprite.framesPerSecond);
+        sourceX = sprite.frameWidth * frame;
+        width = sprite.frameWidth;
+        height = sprite.frameHeight;
+    }
+    
+    var x = position.x * camera.scale;
+    var y = position.y * camera.scale;
+    
+    x -= camera.offset.x;
+    y -= camera.offset.y;
+    
+    // Note(ian): Make the origin the bottom center of the sprite.
+    x -= width * camera.scale / 2;
+    y -= height * camera.scale / 2;
+    
+    // TODO(ian): When rounding we should also consider the scale so we can have finer movement.
+    x = Math.round(x);
+    y = Math.round(y);
+    
+    canvasContext.save();
+    canvasContext.translate(x + (width * camera.scale / 2), y + (height * camera.scale / 2));
+    
+    // Note(ian): Art is draw facing up instead of right so adjust here.
+    canvasContext.rotate(rotation - (Math.PI / 2));
+    
+    // if(sprite.flipH)
+    // {
+        // canvasContext.save();
+        // canvasContext.translate(canvas.width, 0);
+        // canvasContext.scale(-1, 1);
+        // x = canvas.width - x - (sprite.frameWidth * camera.scale);
+    // }
+    
+    canvasContext.drawImage(sprite.image, sourceX, sourceY, width, height,
+        -width * camera.scale / 2, 
+        -height * camera.scale / 2, 
+        width * camera.scale, height * camera.scale);
+    
+    canvasContext.restore();
+    
+    // if(sprite.flipH)
+    // {
+        // canvasContext.restore();
+    // }
 }
 
 var font = "Arial";
@@ -2342,7 +2280,6 @@ function drawText(start, text, fontHeight, color)
 //
 //====== INITIALIZE ======
 //
-
 
 function staticSprite(name)
 {
@@ -2380,7 +2317,7 @@ function entity(x, y, sprite)
     this.physics = null;
 }
 
-var particleDrag = 4;
+var particleDrag = new v2(4, 4);
 var rocketDrag = new v2(2, 2);
 var parachuteDrag = new v2(5, 7);
 var roverDrag = new v2(2, 0.5);
@@ -2398,18 +2335,7 @@ function addEntity(entity)
     entities[entities.length] = entity;
 }
 
- // var tempMan = new entity(300, 100, new staticSprite("data/test.png"));
- // addEntity(tempMan);
- 
-// rover
-// +5 booster
-// jumping rover
-// glider
-// +5 booster
-// jetback rover
-// +5 booster
-// submersible rover
-
+// submersible rover?
 var coinsForBooster2 = 10;
 var coinsForCar = 20;
 //var coinsForGlider = 20;
@@ -2516,12 +2442,26 @@ var thrustSound = new Audio("data/audio/thruster1.wav");
 thrustSound.loop = true;
 var thrustSound2 = new Audio("data/audio/thruster2.wav");
 thrustSound2.loop = true;
-
 var rocketSong = new Audio("data/audio/rockets_flight.wav");
 rocketSong.loop = true;
-
 var gameSong = new Audio("data/audio/rockets_land.wav");
 gameSong.loop = true;
+
+var medals = [];
+function medal(sprite, cost, phrase)
+{
+    this.sprite = sprite;
+    this.cost = cost;
+    this.phrase = phrase;
+}
+// note(ian): The order of these is the reverse order they will apear.
+medals[medals.length] = new medal(medalCompleteSprite, totalCoins, "Mission Complete!");
+medals[medals.length] = new medal(medalbuggyGoldSprite, coinsForJetpack, "Hover Rover");
+medals[medals.length] = new medal(medalRocketGoldSprite, coinsForBooster4, "Full Booster");
+medals[medals.length] = new medal(medalbuggySilverSprite, coinsForJump, "Jumping Rover");
+medals[medals.length] = new medal(medalRocketSilverSprite, coinsForBooster3, "Stronger Booster");
+medals[medals.length] = new medal(medalbuggyBronzeSprite, coinsForCar, "Manuverable Rover");
+medals[medals.length] = new medal(medalRocketBronzeSprite, coinsForBooster2, "Booster Plus");
 
 //
 //====== GAME LOOP ======
@@ -2654,8 +2594,6 @@ function loadMap(mapJson)
                     var object = layer.objects[j];
                     var coin = new entity(object.x, object.y, null);
                     coin.type = "coin";
-                    //coin.physics = new rectanglePhysics(coinSize, coinSize);
-                    //coin.physics.preventsMovement = false;
                     coin.sprite = coinSprite;
                     addEntity(coin);
                     totalCoins++;
@@ -2670,9 +2608,6 @@ function loadMap(mapJson)
                     {
                         playerSpawn = new v2(object.x, object.y);
                         player.position = v2Copy(playerSpawn);
-                        
-                        // tempMan.position.x = player.position.x + 100;
-                        // tempMan.position.y = player.position.y;
                     }
                 }
             }
