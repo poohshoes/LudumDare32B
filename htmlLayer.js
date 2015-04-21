@@ -791,6 +791,22 @@ function ascii(character)
     return result;
 }
 
+
+function particle(position, velocity, drag, life)
+{
+    this.position = position;
+    this.velocity = velocity;
+    this.drag = drag;
+    this.life = 0;
+    this.lifeMax = life;
+}
+
+var particles = [];
+function addParticle(particle)
+{
+    particles[particles.length] = particle;
+}
+
 //
 //====== UPDATE ======
 //
@@ -845,6 +861,10 @@ function update(secondsElapsed)
                 thrustSound.play();
                 rocketInfo.phase = "solidStart";
                 //ignitionSound.play();
+                
+                gameSong.pause();
+                rocketSong.currentTile = 0;
+                rocketSong.play();
             }
             break;
         case "solidStart":
@@ -874,6 +894,10 @@ function update(secondsElapsed)
             
             if(keysDown[ascii("S")] || keysDown[40])
             {
+                rocketSong.pause();
+                gameSong.currentTile = 0;
+                gameSong.play();
+            
                 thrustSound.pause();
                 transitionSound.play();
                 rocketInfo.phase = "drift";
@@ -1084,6 +1108,45 @@ function update(secondsElapsed)
             }
         }
     }
+    
+    // if(!thrustSound.paused)
+    // {
+        // var position = v2Copy(player.position);// todo move to the bottom
+        // position.x += 2 * Math.random();
+        // position.y += 2 * Math.random();
+        // var velocity = v2Normalize(v2Multiply(player.velocity-1));
+        // velocity.x += 0.5 * Math.random();
+        // velocity.y += 0.5 * Math.random();
+        // var newParticle = new particle(position, velocity, particleDrag, 3);
+        // addParticle(newParticle);
+    // }
+    
+    for(i = particles.length -1;
+        i >= 0;
+        i--)
+    {
+        var particle = particles[i];
+        
+        var acceleration = new v2Copy(particle.velocity);
+        acceleration.x *= -particle.drag;
+        acceleration.y *= -particle.drag;
+        
+        var positionDelta = v2Add(
+            v2Multiply(acceleration, 0.5 * Math.pow(secondsElapsed, 2)), 
+            v2Multiply(particle.velocity, secondsElapsed)); 
+    
+        particle.velocity = v2Add(
+            particle.velocity, 
+            v2Multiply(acceleration, secondsElapsed));
+      
+        particle.position = v2Add(particle.position, positionDelta);  
+        
+        particle.life += secondsElapsed;
+        if(particle.life < particle.lifeMax)
+        {
+            particles.splice(i, 1);
+        }
+    }
 }
 
 function setVolumeFadeIn(sound, fadeLength)
@@ -1123,7 +1186,7 @@ function moveEntity(entity, acceleration, secondsElapsed)
         v2Multiply(entity.motion.velocity, secondsElapsed)); 
     
     entity.motion.velocity = v2Add(
-        entity.motion.velocity, 
+        entity.motion.velocity,
         v2Multiply(acceleration, secondsElapsed));
         
     var distanceRemaining = entity.motion.distanceLimit;
@@ -1441,6 +1504,29 @@ function draw()
         position.x -= canvasContext.measureText(medalPhrase).width;
         drawText(position, medalPhrase, fontHeight, "#FFFFFF");
     }
+    
+    
+    for(i = particles.length -1;
+        i >= 0;
+        i--)
+    {
+        var particle = particles[i];
+        var lifePercent = particle.live / particle.lifeMax;
+        var image = smokeSprite.image;
+        if(lifePercent > 0.25)
+        {
+            image = smokeSprite2.image;
+        }
+        if(lifePercent > 0.50)
+        {
+            image = smokeSprite3.image;
+        }
+        if(lifePercent > 0.75)
+        {
+            image = smokeSprite4.image;
+        }
+        drawTextureScaled(image, particle.position.x, particle.position.y);
+    }
 }
 
 // draws from center point
@@ -1487,6 +1573,14 @@ function drawTexture(image, x, y)
     x = (x * camera.scale);// - camera.offset.x;
     y = (y * camera.scale);// - camera.offset.y;
     canvasContext.drawImage(image, x, y);//, image.width * camera.scale, image.height * camera.scale);
+}
+
+function drawTextureScaled(image, x, y)
+{
+    x = (x * camera.scale) - camera.offset.x;
+    y = (y * camera.scale) - camera.offset.y;
+    var tile = mapData.tiles[spriteID];
+    canvasContext.drawImage(tile.image, x, y, mapData.tileWidth * camera.scale, mapData.tileHeight * camera.scale);
 }
 
 function drawEntity(entity)
@@ -1579,6 +1673,7 @@ function drawText(start, text, fontHeight, color)
 //====== INITIALIZE ======
 //
 
+
 function staticSprite(name)
 {
     this.type = "static";
@@ -1615,6 +1710,7 @@ function entity(x, y, sprite)
     this.physics = null;
 }
 
+var particleDrag = 4;
 var rocketDrag = new v2(2, 2);
 var parachuteDrag = new v2(5, 7);
 var roverDrag = new v2(2, 0.5);
@@ -1644,15 +1740,15 @@ function addEntity(entity)
 // +5 booster
 // submersible rover
 
-var coinsForCar = 5;
-var coinsForBooster2 = 10;
-var coinsForJump = 15;
-var coinsForGlider = 20;
-var coinsForBooster3 = 25;
-var coinsForJetpack = 30;
-var coinsForBooster4 = 35;
+var coinsForCar = 10;
+var coinsForBooster2 = 20;
+var coinsForJump = 30;
+//var coinsForGlider = 20;
+var coinsForBooster3 = 40;
+var coinsForJetpack = 50;
+var coinsForBooster4 = 60;
 
-function rocket() 
+function rocket()
 {
     // note(ian): You can only hover when you have the hover rover.
     this.hoverSecondsMax = 1;
@@ -1717,6 +1813,10 @@ var medalRocketGoldSprite = new staticSprite("data/medal3.png");
 var medalRocketSilverSprite = new staticSprite("data/medal4.png");
 var medalRocketBronzeSprite = new staticSprite("data/medal5.png");
 var medalCompleteSprite = new staticSprite("data/medal.png");
+var smokeSprite = new staticSprite("data/smoke.png");
+var smokeSprite2 = new staticSprite("data/smoke2.png");
+var smokeSprite3 = new staticSprite("data/smoke3.png");
+var smokeSprite4 = new staticSprite("data/smoke4.png");
 
 var totalCoins = 0;
 var coinsCollected = 0;
@@ -1746,6 +1846,12 @@ var thrustSound = new Audio("data/audio/thrust.wav");
 thrustSound.loop = true;
 var thrustSound2 = new Audio("data/audio/thrust2.wav");
 thrustSound2.loop = true;
+
+var rocketSong = new Audio("data/audio/levelup.wav");
+rocketSong.loop = true;
+
+var gameSong = new Audio("data/audio/coin.wav");
+gameSong.loop = true;
 
 //
 //====== GAME LOOP ======
@@ -1996,6 +2102,16 @@ function v2NormalizeAssign(a)
     {
         v2DivideAssign(a, v2Length(a));
     }
+}
+
+function v2Normalize(a)
+{
+    var result = v2Copy(a);
+    if(a.x != 0 || a.y != 0)
+    {
+        result = v2Divide(a, v2Length(a));
+    }
+    return result;
 }
 
 function v2Copy(v)
