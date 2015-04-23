@@ -1530,7 +1530,7 @@ function update(secondsElapsed)
                 //ignitionSound.play();
                 
                 gameSong.pause();
-                rocketSong.currentTile = 0;
+                rocketSong.currentTime = 0;
                 rocketSong.play();
             }
             break;
@@ -1815,8 +1815,8 @@ function update(secondsElapsed)
         }
     }
     
-    setVolumeFadeIn(rocketSong, 1);
-    setVolumeFadeIn(gameSong, 1);
+    setVolumeFadeIn(rocketSong, 3);
+    setVolumeFadeIn(gameSong, 3);
 }
 
 function setVolumeFadeIn(sound, fadeLength)
@@ -2497,22 +2497,6 @@ function main()
         canvasContext.fillText(secondsSinceUpdate,10,y);
         y += 14;
         canvasContext.fillText("V:" + v2Length(player.motion.velocity), 10, y);
-        y += 14;
-        canvasContext.fillText("X:" + player.motion.velocity.x, 10, y);
-        y += 14;
-        canvasContext.fillText("Y:" + player.motion.velocity.y, 10, y);
-        y += 14;
-        canvasContext.fillText(rocketInfo.phase, 10, y );
-        y += 14;
-        canvasContext.fillText("R: " + player.rotation, 10, y );
-        y += 14;
-        canvasContext.fillText("On Ground: " + player.physics.onGroundLastFrame, 10, y );
-        y += 14;
-        canvasContext.fillText("T1: " + thrustSound.currentTime, 10, y );
-        y += 14;
-        canvasContext.fillText("T2: " + thrustSound2.currentTime, 10, y );
-        y += 14;
-        canvasContext.fillText("V1: " + thrustSound.volume, 10, y );
     }
         
 	lastUpdateTime = now;
