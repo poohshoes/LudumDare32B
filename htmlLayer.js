@@ -2092,17 +2092,18 @@ function draw()
         drawText(new v2(x, y), activePhrase, fontHeight, "#FFFFFF")
     }
     
+    var medalScale = 0.5;
     var medalPhrase = "";
-    var medalSpacing = (medalbuggyGoldSprite.image.height / camera.scale) + 2;
-    var medalY = baseHeight - medalSpacing;
-    var medalX = baseWidth - medalSpacing;
+    var medalSpacing = (medalbuggyGoldSprite.image.height * medalScale) + 2;    
+    var medalPosition = new v2(baseWidth - medalSpacing, baseHeight - medalSpacing);
     
     for(var i = 0; i < medals.length; i++)
     {
         if(coinsCollected >= medals[i].cost)
         {
-            drawTexture(medals[i].sprite.image, medalX, medalY);
-            medalY -= medalSpacing;
+            drawSprite(medals[i].sprite, medalPosition, 0, medalScale, false, true);
+                        
+            medalPosition.y -= medalSpacing;
             if(medalPhrase == "")
             {
                 medalPhrase = medals[i].phrase;
@@ -2114,7 +2115,7 @@ function draw()
     {
         var fontHeight = 9;
         canvasContext.font = fontHeight + "px " + font; // note(ian): Must set this for measureText to work.
-        var position = new v2(medalX, baseHeight - fontHeight - 6);
+        var position = new v2(medalPosition.x, baseHeight - fontHeight - 6);
         position.x -= canvasContext.measureText(medalPhrase).width;
         drawText(position, medalPhrase, fontHeight, "#FFFFFF");
     }
@@ -2138,7 +2139,7 @@ function draw()
         {
             sprite = smokeSprite4;
         }
-        drawSprite(sprite, particle.position, 0);
+        drawSprite(sprite, particle.position, 0, 1, true, false);
     }
 }
 
@@ -2180,19 +2181,11 @@ function drawCircle(x, y)
     canvasContext.fill();
 }
 
-// note(ian): This is only for unscaled images!
-function drawTexture(image, x, y)
-{
-    x = (x * camera.scale);// - camera.offset.x;
-    y = (y * camera.scale);// - camera.offset.y;
-    canvasContext.drawImage(image, x, y);//, image.width * camera.scale, image.height * camera.scale);
-}
-
 function drawEntity(entity)
 {
     if(entity.sprite != null)
     {
-        drawSprite(entity.sprite, entity.position, entity.rotation);
+        drawSprite(entity.sprite, entity.position, entity.rotation, 1, true, false);
     }
     
     if(debug)
@@ -2205,13 +2198,21 @@ function drawEntity(entity)
     }
 }
 
-function drawSprite(sprite, position, rotation)
+// todo: have a function with all these options handle the rectangle, cirlce, and text drawing as well?
+function drawSprite(
+    sprite, 
+    position, 
+    rotation, 
+    scale, // The scale to draw the image at.
+    isCentered, // True means the position is the center, false means top left.
+    ignoreCameraOffset // True when drawing UI elements.
+    )
 {   
     var sourceX = 0;
     var sourceY = 0;
     var width = sprite.image.width;
     var height = sprite.image.height;
-    
+        
     if(sprite.type == "animated")
     {
         var frame = Math.floor(sprite.animationSeconds * sprite.framesPerSecond);
@@ -2223,22 +2224,30 @@ function drawSprite(sprite, position, rotation)
     var x = position.x * camera.scale;
     var y = position.y * camera.scale;
     
-    x -= camera.offset.x;
-    y -= camera.offset.y;
+    if(!ignoreCameraOffset)
+    {
+        x -= camera.offset.x;
+        y -= camera.offset.y;
+    }
     
-    // Note(ian): Make the origin the bottom center of the sprite.
-    x -= width * camera.scale / 2;
-    y -= height * camera.scale / 2;
+    var totalScale = camera.scale * scale;
     
+    if(isCentered)
+    {
+        // Note(ian): Make the origin the center of the sprite.
+        x -= width * totalScale / 2;
+        y -= height * totalScale / 2;
+    }
+        
     // TODO(ian): When rounding we should also consider the scale so we can have finer movement.
     x = Math.round(x);
     y = Math.round(y);
     
     canvasContext.save();
-    canvasContext.translate(x + (width * camera.scale / 2), y + (height * camera.scale / 2));
+    canvasContext.translate(x + (width * totalScale / 2), y + (height * totalScale / 2));
     
     // Note(ian): Art is draw facing up instead of right so adjust here.
-    canvasContext.rotate(rotation - (Math.PI / 2));
+    canvasContext.rotate(rotation - sprite.artRotation);
     
     // if(sprite.flipH)
     // {
@@ -2248,10 +2257,12 @@ function drawSprite(sprite, position, rotation)
         // x = canvas.width - x - (sprite.frameWidth * camera.scale);
     // }
     
+    // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
     canvasContext.drawImage(sprite.image, sourceX, sourceY, width, height,
-        -width * camera.scale / 2, 
-        -height * camera.scale / 2, 
-        width * camera.scale, height * camera.scale);
+        -width * totalScale / 2, 
+        -height * totalScale / 2, 
+        width * totalScale, 
+        height * totalScale);
     
     canvasContext.restore();
     
@@ -2281,11 +2292,12 @@ function drawText(start, text, fontHeight, color)
 //====== INITIALIZE ======
 //
 
-function staticSprite(name)
+function staticSprite(name, artRotation)
 {
     this.type = "static";
     this.image = new Image();
     this.image.src = name;
+    this.artRotation = artRotation; // some art (like rockets) is drawn facing up when it should be drawn facing right
 }
 
 function animatedSprite(name, frameWidth, frameHeight, framesPerSecond)
@@ -2311,7 +2323,7 @@ function entity(x, y, sprite)
 {
     this.type = "";
     this.position = new v2(x, y);
-    this.rotation = Math.PI / 2;
+    this.rotation = 0;
     this.sprite = sprite;
     this.motion = null;
     this.physics = null;
@@ -2335,10 +2347,8 @@ function addEntity(entity)
     entities[entities.length] = entity;
 }
 
-// submersible rover?
 var coinsForBooster2 = 10;
 var coinsForCar = 20;
-//var coinsForGlider = 20;
 var coinsForBooster3 = 30;
 var coinsForJump = 40;
 var coinsForBooster4 = 50;
@@ -2392,27 +2402,29 @@ function rocket()
     this.phase = "ready";
 }
 
-var rocketSprite = new staticSprite("data/rocket.png");
-var rocketSprite2 = new staticSprite("data/rocket2.png");
-var rocketSprite3 = new staticSprite("data/rocket3.png");
-var rocketSprite4 = new staticSprite("data/rocket4.png");
-var staticRoverSprite = new staticSprite("data/roverStatic.png");
-var carRoverSprite = new staticSprite("data/roverCar.png");
-var jumpRoverSprite = new staticSprite("data/roverJump.png");
-var hoverRoverSprite = new staticSprite("data/roverHover.png");
-var parachuteSprite = new staticSprite("data/parachute.png");
-var coinSprite = new staticSprite("data/coin.png");
-var medalbuggyGoldSprite = new staticSprite("data/medalbuggy1.png");
-var medalbuggySilverSprite = new staticSprite("data/medalbuggy2.png");
-var medalbuggyBronzeSprite = new staticSprite("data/medalbuggy3.png");
-var medalRocketGoldSprite = new staticSprite("data/medal3.png");
-var medalRocketSilverSprite = new staticSprite("data/medal4.png");
-var medalRocketBronzeSprite = new staticSprite("data/medal5.png");
-var medalCompleteSprite = new staticSprite("data/medal.png");
-var smokeSprite = new staticSprite("data/smoke.png");
-var smokeSprite2 = new staticSprite("data/smoke2.png");
-var smokeSprite3 = new staticSprite("data/smoke3.png");
-var smokeSprite4 = new staticSprite("data/smoke4.png");
+var HalfPI = Math.PI/2;
+
+var rocketSprite = new staticSprite("data/rocket.png", HalfPI);
+var rocketSprite2 = new staticSprite("data/rocket2.png", HalfPI);
+var rocketSprite3 = new staticSprite("data/rocket3.png", HalfPI);
+var rocketSprite4 = new staticSprite("data/rocket4.png", HalfPI);
+var staticRoverSprite = new staticSprite("data/roverStatic.png", HalfPI);
+var carRoverSprite = new staticSprite("data/roverCar.png", HalfPI);
+var jumpRoverSprite = new staticSprite("data/roverJump.png", HalfPI);
+var hoverRoverSprite = new staticSprite("data/roverHover.png", HalfPI);
+var parachuteSprite = new staticSprite("data/parachute.png", HalfPI);
+var coinSprite = new staticSprite("data/coin.png", 0);
+var medalbuggyGoldSprite = new staticSprite("data/medalbuggy1.png", 0);
+var medalbuggySilverSprite = new staticSprite("data/medalbuggy2.png", 0);
+var medalbuggyBronzeSprite = new staticSprite("data/medalbuggy3.png", 0);
+var medalRocketGoldSprite = new staticSprite("data/medal3.png", 0);
+var medalRocketSilverSprite = new staticSprite("data/medal4.png", 0);
+var medalRocketBronzeSprite = new staticSprite("data/medal5.png", 0);
+var medalCompleteSprite = new staticSprite("data/medal.png", 0);
+var smokeSprite = new staticSprite("data/smoke.png", 0);
+var smokeSprite2 = new staticSprite("data/smoke2.png", 0);
+var smokeSprite3 = new staticSprite("data/smoke3.png", 0);
+var smokeSprite4 = new staticSprite("data/smoke4.png", 0);
 
 var totalCoins = 0;
 var coinsCollected = 0;
@@ -2423,6 +2435,7 @@ var rocketInfo = new rocket();
 var player = new entity(0, 0, rocketSprite);
 player.motion = new motion();
 player.physics = new rectanglePhysics(20, 25);
+player.rotation = playerSpawnRotation;
 addEntity(player);
 
 var mapData = new Object();
