@@ -1390,6 +1390,27 @@ var map1 =
  "width":200
 };
 
+// TODO:
+// better level
+// minimap upgrade
+// explosion on hitting stuff.
+// don't automatically switch to rover
+// particles: thrust, landing dust
+// marching squares
+
+// BLITTING A SINGLE PIXEL
+// var id = myContext.createImageData(1, 1);
+// var d = id.data;
+// d[0] = r;
+// d[1] = g;
+// d[2] = b;
+// d[3] = a;
+// myContext.putImageData(id, x, y);
+
+// EDITING IMAGE DATA
+// var imageData = ctx.getImageData(x, y, width, height);
+// var pixels = imageData.data;
+// imageData is an array stored rgbargba...
 
 
 //
