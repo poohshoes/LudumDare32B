@@ -2545,6 +2545,7 @@ function loadMap(mapJson)
     mapData.tileHeight = mapJson.tileheight;
     mapData.layers = [];
     mapData.tiles = [];
+	mapData.marchingInfo = [];
     currentMapJson = mapJson;
     
     for(var i = 0; i < mapJson.tilesets.length; i++)
@@ -2555,7 +2556,7 @@ function loadMap(mapJson)
         mapData.tiles[id].image = new Image();
         mapData.tiles[id].image.src = "data/" + tileset.image;
     }
-    
+	
     var layerZ = 0;
     for(var i = 0; i < mapJson.layers.length; i++)
     {
@@ -2573,6 +2574,34 @@ function loadMap(mapJson)
                         tileY < mapData.height;
                         tileY++)
                     {
+						if(tileX < mapData.width - 1 && tileY < mapData.height - 1)
+						{
+							// Todo(ian): Verify that tiled map is top down, if it's bottom up this is backwards.
+							var marchingImageNumber = 0;
+							var topLeftSpriteID = layer.data[tileX + (tileY * mapData.width)];
+							var topRightSpriteID = layer.data[tileX + 1 + (tileY * mapData.width)];
+							var bottomLeftSpriteID = layer.data[tileX + ((tileY + 1) * mapData.width)];
+							var bottomRightSpriteID = layer.data[tileX + 1 + ((tileY + 1) * mapData.width)];
+							
+							if(topLeftSpriteID != 0)
+							{
+								marchingImageNumber += 1;
+							}
+							if(topRightSpriteID != 0)
+							{
+								marchingImageNumber += 2;
+							}
+							if(bottomRightSpriteID != 0)
+							{
+								marchingImageNumber += 4;
+							}
+							if(bottomLeftSpriteID != 0)
+							{
+								marchingImageNumber += 8;
+							}
+							mapData.marchingInfo[tileX + (tileY * (mapData.widht - 1))] = marchingImageNumber;
+						}
+					
                         // Todo(ian): Scale and offset this properly.
                         var spriteID = layer.data[tileX + (tileY * mapData.width)];
                         if(spriteID != 0)
@@ -2582,6 +2611,8 @@ function loadMap(mapJson)
                             var wall = new entity(x + (mapData.tileWidth/2), y + (mapData.tileHeight/2) , null);
                             wall.physics = new rectanglePhysics(mapData.tileWidth, mapData.tileHeight);
                             addEntity(wall);
+							
+							
                         }
                     }
                 }
